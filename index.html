@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Power Haven | Grid-Ready Datacentres</title>
+    <meta
+      name="description"
+      content="Power Haven helps UK datacentres reduce grid risk, improve energy performance, and unlock flexibility value through VoltPilot."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/svg+xml" href="./logo-mark.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="aurora"></div>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Power Haven home">
+        <img src="./logo-mark.svg" alt="Power Haven logo" width="24" height="24" />
+        <span><strong>Power</strong> <em>Haven</em></span>
+      </a>
+      <nav>
+        <a href="#vision">Vision</a>
+        <a href="#platform">Platform</a>
+        <a href="#trust">Trust</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="cta ghost" href="#contact">Request Access</a>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <p class="eyebrow">VoltPilot by Power Haven</p>
+        <h1>Turn datacentre energy constraints into grid advantage.</h1>
+        <p class="lead">
+          Power Haven helps UK datacentres facing grid constraints and volatile power conditions optimise demand, unlock flexibility value, and stay infrastructure-compliant.
+        </p>
+        <div class="proof-row" aria-label="Institutional proof">
+          <span>UCL Energy Institute</span>
+          <span>Mentored by Siemens Energy</span>
+        </div>
+        <div class="hero-actions">
+          <a class="cta solid" href="#contact">Request Early Access</a>
+          <a class="text-link" href="#platform">See how it works →</a>
+        </div>
+        <div class="hero-panel" role="status" aria-live="polite">
+          <p class="panel-title">Live Flexibility Signal</p>
+          <div class="meter-wrap">
+            <div class="meter-line" id="meterLine"></div>
+          </div>
+          <div class="panel-grid">
+            <article>
+              <p>Current System Window</p>
+              <strong id="windowTag">Moderate</strong>
+            </article>
+            <article>
+              <p>Estimated Site Flex (Illustrative)</p>
+              <strong id="flexValue">2.4 MW</strong>
+            </article>
+            <article>
+              <p>Potential Annual Range (Illustrative)</p>
+              <strong id="valueRange">£120k–£310k</strong>
+            </article>
+          </div>
+          <small>Illustrative signals for information purposes only.</small>
+        </div>
+      </section>
+
+      <section id="vision" class="section split">
+        <div>
+          <p class="eyebrow">Vision</p>
+          <h2>Datacentre growth and grid resilience should move in the same direction.</h2>
+          <p>
+            UK datacentres are expanding into a grid environment with rising constraints, tighter infrastructure expectations, and increased pressure on reliable connection capacity.
+          </p>
+          <p>
+            Power Haven’s mission is to make existing site assets work harder and smarter, so operators improve performance while aligning with national system needs.
+          </p>
+        </div>
+        <aside class="stat-card" title="Macro context">
+          <p class="stat">3.5 TWh</p>
+          <p>Recent annual UK curtailment context in public grid discussions.</p>
+        </aside>
+      </section>
+
+      <section id="platform" class="section">
+        <p class="eyebrow">The Platform</p>
+        <h2>VoltPilot: one operating layer, three practical outcomes.</h2>
+        <div class="cards">
+          <article class="card" data-tip="Assesses where controllable flexibility actually exists across your assets.">
+            <h3>Measure Flexibility</h3>
+            <p>Build an operational baseline across UPS, cooling, storage, and load behaviour with clear, auditable visibility.</p>
+          </article>
+          <article class="card" data-tip="Matches dispatch opportunities with operational constraints and site priorities.">
+            <h3>Optimise Dispatch</h3>
+            <p>Coordinate energy demand decisions in line with market windows and reliability requirements without disrupting compute operations.</p>
+          </article>
+          <article class="card" data-tip="Supports evidence-based participation aligned with UK grid and infrastructure expectations.">
+            <h3>Support Compliance Pathways</h3>
+            <p>Structure reporting and operational evidence so participation is technically credible for operators and external stakeholders.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="trust" class="section trust">
+        <p class="eyebrow">Trust</p>
+        <h2>Built with research depth and industry grounding.</h2>
+        <div class="logos">
+          <div>UCL</div>
+          <div>Siemens Energy</div>
+        </div>
+        <blockquote>
+          “We are building the software bridge between datacentre operations and grid flexibility participation, with operational realism first.”
+        </blockquote>
+        <p class="quote-by">— Federico Gambedotti, Founder</p>
+      </section>
+
+      <section id="contact" class="section contact">
+        <p class="eyebrow">Contact</p>
+        <h2>Interested in partnering, piloting, or joining the team?</h2>
+        <p class="lead compact">
+          Send a short note and we will respond quickly.
+        </p>
+        <form action="mailto:hello@powerhaven.io" method="post" enctype="text/plain">
+          <label>
+            Name
+            <input name="name" type="text" required />
+          </label>
+          <label>
+            Organisation
+            <input name="organisation" type="text" required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" required />
+          </label>
+          <label>
+            Message (optional)
+            <textarea name="message" rows="4"></textarea>
+          </label>
+          <button class="cta solid" type="submit">Send Message</button>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <p>© <span id="year"></span> Power Haven Ltd. All rights reserved.</p>
+      <a href="mailto:hello@powerhaven.io">hello@powerhaven.io</a>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

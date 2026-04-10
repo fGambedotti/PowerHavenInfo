@@ -1,0 +1,68 @@
+[
+  {
+    "id": "scotland-north",
+    "label": "North Scotland",
+    "dno": "SSEN Distribution",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 1.35,
+    "baseConstraint": 0.28,
+    "bmBasePrice": 78,
+    "zoneCarbonMultiplier": 0.92,
+    "seed": 1.09
+  },
+  {
+    "id": "scotland-central",
+    "label": "Central Scotland",
+    "dno": "SP Energy Networks",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 1.2,
+    "baseConstraint": 0.24,
+    "bmBasePrice": 72,
+    "zoneCarbonMultiplier": 0.95,
+    "seed": 1.27
+  },
+  {
+    "id": "north-england",
+    "label": "North England",
+    "dno": "Northern Powergrid",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 1.08,
+    "baseConstraint": 0.2,
+    "bmBasePrice": 64,
+    "zoneCarbonMultiplier": 1.0,
+    "seed": 1.44
+  },
+  {
+    "id": "midlands",
+    "label": "Midlands",
+    "dno": "National Grid Electricity Distribution",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 0.95,
+    "baseConstraint": 0.17,
+    "bmBasePrice": 58,
+    "zoneCarbonMultiplier": 1.03,
+    "seed": 1.62
+  },
+  {
+    "id": "london-se",
+    "label": "London / South East",
+    "dno": "UK Power Networks",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 0.88,
+    "baseConstraint": 0.14,
+    "bmBasePrice": 53,
+    "zoneCarbonMultiplier": 1.07,
+    "seed": 1.81
+  },
+  {
+    "id": "wales-sw",
+    "label": "Wales / South West",
+    "dno": "National Grid Electricity Distribution",
+    "tso": "National Energy System Operator",
+    "constraintMultiplier": 1.02,
+    "baseConstraint": 0.19,
+    "bmBasePrice": 61,
+    "zoneCarbonMultiplier": 0.98,
+    "seed": 1.95
+  }
+]

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Power Haven Demo | VoltPilot Flexibility Model</title>
+    <meta
+      name="description"
+      content="Interactive UK datacentre flexibility model with half-hourly simulation, region-specific balancing value, and VoltPilot battery optimisation."
+    />
+    <link rel="icon" type="image/svg+xml" href="./logo-mark.svg" />
+    <link rel="stylesheet" href="./demo.css" />
+  </head>
+  <body>
+    <div class="demo-bg" aria-hidden="true"></div>
+
+    <header class="demo-topbar">
+      <a class="brand" href="./index.html" aria-label="Back to Power Haven">
+        <img src="./logo-mark.svg" alt="Power Haven logo" width="24" height="24" />
+        <span><strong>Power</strong> <em>Haven</em> Demo</span>
+      </a>
+      <a class="back-link" href="./index.html">← Back to main page</a>
+    </header>
+
+    <main class="demo-main">
+      <section class="hero">
+        <p class="eyebrow">PowerHaven Demo</p>
+        <h1>UK datacentre flexibility model</h1>
+        <p>
+          This demo uses half-hourly synthetic market signals for 1 January to 31 December,
+          with UK-wide electricity prices and region-specific balancing value driven by local constraints.
+        </p>
+      </section>
+
+      <section class="workspace">
+        <aside class="controls-panel">
+          <h2>Scenario controls</h2>
+
+          <label>
+            Network area (DNO/TSO)
+            <select id="regionSelect"></select>
+          </label>
+
+          <label>
+            Datacentre size
+            <div class="range-wrap">
+              <input id="sizeSlider" type="range" min="1" max="100" value="20" step="1" />
+              <output id="sizeValue">20 MW</output>
+            </div>
+          </label>
+
+          <label class="toggle">
+            <input id="useVoltPilot" type="checkbox" checked />
+            <span>Use VoltPilot optimisation</span>
+          </label>
+
+          <details class="advanced">
+            <summary>Advanced battery settings</summary>
+            <label>
+              Battery duration
+              <select id="batteryHours">
+                <option value="2">2 hours</option>
+                <option value="3">3 hours</option>
+                <option value="4" selected>4 hours (default)</option>
+                <option value="5">5 hours</option>
+                <option value="6">6 hours</option>
+                <option value="8">8 hours</option>
+              </select>
+            </label>
+          </details>
+
+          <button id="runModel" type="button">Run simulation</button>
+
+          <div class="region-note" id="regionInfo"></div>
+        </aside>
+
+        <section class="results-panel">
+          <div class="status-row">
+            <p id="modeTag">Mode: VoltPilot enabled</p>
+            <p id="datasetTag">Dataset: synthetic 2025 half-hourly profile</p>
+          </div>
+
+          <div class="kpi-grid">
+            <article class="kpi">
+              <p>Annual energy cost (baseline)</p>
+              <strong id="baselineCost">£0</strong>
+            </article>
+            <article class="kpi">
+              <p>Annual energy cost (VoltPilot)</p>
+              <strong id="vpCost">£0</strong>
+            </article>
+            <article class="kpi accent">
+              <p>Annual cost saving</p>
+              <strong id="costSaving">£0</strong>
+            </article>
+            <article class="kpi accent-soft">
+              <p>Flexibility revenue (BM)</p>
+              <strong id="flexRevenue">£0</strong>
+            </article>
+            <article class="kpi">
+              <p>Net annual benefit</p>
+              <strong id="netBenefit">£0</strong>
+            </article>
+            <article class="kpi">
+              <p>Average BM payment (selected region)</p>
+              <strong id="avgBmPrice">£0/MWh</strong>
+            </article>
+            <article class="kpi">
+              <p>Annual datacentre energy baseline</p>
+              <strong id="baseEnergy">0 MWh</strong>
+            </article>
+            <article class="kpi">
+              <p>Annual datacentre energy with VoltPilot</p>
+              <strong id="vpEnergy">0 MWh</strong>
+            </article>
+            <article class="kpi accent-soft">
+              <p>Grid energy reduction</p>
+              <strong id="energyReduction">0 MWh</strong>
+            </article>
+            <article class="kpi accent-soft">
+              <p>Annual emissions avoided</p>
+              <strong id="emissionReduction">0 tCO₂</strong>
+            </article>
+          </div>
+
+          <div class="chart-grid">
+            <article class="chart-card">
+              <h3>48-hour grid draw profile (selected mode)</h3>
+              <canvas id="gridDrawChart" height="240" aria-label="Grid draw profile chart"></canvas>
+            </article>
+            <article class="chart-card">
+              <h3>48-hour price and balancing value</h3>
+              <canvas id="marketChart" height="240" aria-label="Market price and balancing value chart"></canvas>
+            </article>
+          </div>
+
+          <div class="summary-table-wrap">
+            <table class="summary-table">
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Annual energy cost</th>
+                  <th>Flexibility revenue</th>
+                  <th>Total grid energy</th>
+                  <th>Emissions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Without VoltPilot</td>
+                  <td id="tableBaseCost">£0</td>
+                  <td>£0</td>
+                  <td id="tableBaseEnergy">0 MWh</td>
+                  <td id="tableBaseEmissions">0 tCO₂</td>
+                </tr>
+                <tr>
+                  <td>With VoltPilot</td>
+                  <td id="tableVpCost">£0</td>
+                  <td id="tableVpRevenue">£0</td>
+                  <td id="tableVpEnergy">0 MWh</td>
+                  <td id="tableVpEmissions">0 tCO₂</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="method-note">
+            Method note: This version uses a realistic synthetic 2025 half-hourly profile (not live market feed).
+            UK wholesale price is uniform nationally. Regional balancing revenue and constraints vary by network area.
+          </p>
+        </section>
+      </section>
+    </main>
+
+    <script src="./demo.js"></script>
+  </body>
+</html>

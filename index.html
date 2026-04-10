@@ -6,7 +6,7 @@
     <title>Power Haven | Datacentre Flexibility Software</title>
     <meta
       name="description"
-      content="Power Haven helps UK datacentres cut energy cost, improve operations, and unlock flexibility value through VoltPilot software."
+      content="Power Haven helps UK datacentres cut electricity cost, optimise demand, and unlock flexibility value through VoltPilot software."
     />
     <link rel="icon" type="image/svg+xml" href="./logo-mark.svg" />
     <link rel="stylesheet" href="./styles.css" />
@@ -22,7 +22,8 @@
       <nav>
         <a href="#vision">Vision</a>
         <a href="#platform">Product</a>
-        <a href="#trust">Trust</a>
+        <a href="#impact">Impact</a>
+        <a href="#process">Process</a>
         <a href="#contact">Contact</a>
       </nav>
       <a class="cta ghost" href="#contact">Request Access</a>
@@ -31,16 +32,10 @@
     <main id="top">
       <section class="hero section">
         <p class="eyebrow">VoltPilot by Power Haven</p>
-        <h1>We help UK datacentres reduce energy cost and unlock grid flexibility value.</h1>
+        <h1>We help UK datacentres cut electricity cost and unlock flexibility value.</h1>
         <p class="lead">
-          VoltPilot software optimises site demand and integrates batteries, UPS and cooling assets into flexibility opportunities while staying infrastructure-compliant.
+          VoltPilot software shifts site demand with batteries and existing assets, then automates interaction with flexibility opportunities while supporting infrastructure requirements.
         </p>
-
-        <ul class="clarity-row" aria-label="Quick clarity">
-          <li><strong>Company:</strong> Power Haven</li>
-          <li><strong>Product:</strong> VoltPilot software</li>
-          <li><strong>Outcome:</strong> Better performance, lower cost, more grid-ready operations</li>
-        </ul>
 
         <div class="proof-row" aria-label="Institutional proof">
           <span>UCL Energy Institute</span>
@@ -51,45 +46,14 @@
           <a class="cta solid" href="#contact">Request Early Access</a>
           <a class="text-link" href="#platform">See how it works →</a>
         </div>
-
-        <div class="hero-panel" role="status" aria-live="polite">
-          <p class="panel-title">Live Flexibility Signal</p>
-          <div class="meter-wrap">
-            <div class="meter-line" id="meterLine"></div>
-          </div>
-          <div class="panel-grid">
-            <article>
-              <p>Current system window</p>
-              <strong id="windowTag">Moderate</strong>
-            </article>
-            <article>
-              <p>Estimated site flex (illustrative)</p>
-              <strong id="flexValue">2.4 MW</strong>
-            </article>
-            <article>
-              <p>Potential annual range (illustrative)</p>
-              <strong id="valueRange">£120k–£310k</strong>
-            </article>
-          </div>
-          <small>Illustrative signals shown for context only.</small>
-        </div>
       </section>
 
-      <section id="vision" class="section split">
-        <div>
-          <p class="eyebrow">Vision</p>
-          <h2>Datacentre reliability and grid needs should work together, not compete.</h2>
-          <p>
-            UK operators face constrained grid capacity, volatile electricity conditions and increasing operational pressure from energy intensity.
-          </p>
-          <p>
-            Power Haven’s mission is to make existing site assets more useful to both the operator and the wider system through practical software-led coordination.
-          </p>
-        </div>
-        <aside class="stat-card" title="System context">
-          <p class="stat">3.5 TWh</p>
-          <p>Recent UK curtailment context in publicly discussed system data.</p>
-        </aside>
+      <section id="vision" class="section vision-large">
+        <p class="eyebrow">Vision</p>
+        <h2>Datacentres should not be forced to buy most energy at the most expensive hours.</h2>
+        <p>
+          Power Haven helps operators reshape demand, use on-site batteries intelligently, and run more resiliently under UK grid constraints.
+        </p>
       </section>
 
       <section id="platform" class="section">
@@ -111,42 +75,83 @@
         </div>
       </section>
 
-      <section id="trust" class="section trust">
-        <p class="eyebrow">Trust</p>
-        <h2>Built with research depth and industry grounding.</h2>
-        <div class="logos">
-          <div>UCL</div>
-          <div>Siemens Energy</div>
+      <section id="impact" class="section impact">
+        <p class="eyebrow">Impact</p>
+        <h2>Same datacentre. Different demand strategy.</h2>
+        <p class="lead compact">
+          Left: unchanged demand profile following grid peaks. Right: demand shifted with batteries so more electricity is bought outside peak price windows.
+        </p>
+
+        <div class="impact-grid">
+          <article class="chart-card">
+            <h3>Unchanged operation</h3>
+            <canvas id="baselineChart" height="220" aria-label="Baseline demand and electricity price chart"></canvas>
+            <div class="chart-legend">
+              <span><i class="dot demand"></i>Datacentre demand</span>
+              <span><i class="dot price"></i>Electricity price</span>
+            </div>
+            <p class="cost-label">Estimated daily electricity cost</p>
+            <p id="baselineCost" class="cost-value">£0</p>
+          </article>
+
+          <article class="chart-card">
+            <h3>VoltPilot + batteries</h3>
+            <canvas id="optimisedChart" height="220" aria-label="Optimised demand and electricity price chart"></canvas>
+            <div class="chart-legend">
+              <span><i class="dot demand"></i>Shifted demand</span>
+              <span><i class="dot price"></i>Electricity price</span>
+              <span><i class="dot battery"></i>Battery charge/discharge</span>
+            </div>
+            <p class="cost-label">Estimated daily electricity cost</p>
+            <p id="optimisedCost" class="cost-value">£0</p>
+          </article>
         </div>
-        <blockquote>
-          “We are building the software bridge between datacentre operations and grid flexibility participation, with operational realism first.”
-        </blockquote>
-        <p class="quote-by">— Federico Gambedotti, Founder</p>
+
+        <div class="savings-card">
+          <p>Estimated daily saving with battery-shift strategy</p>
+          <strong id="savingsValue">£0</strong>
+        </div>
       </section>
 
-      <section id="contact" class="section contact">
+      <section id="process" class="section">
+        <p class="eyebrow">Process</p>
+        <h2>Three-step rollout for operators.</h2>
+
+        <div class="step-grid">
+          <article class="step-card">
+            <p class="step-number">Step 1</p>
+            <h3>Install VoltPilot</h3>
+            <div class="step-image" role="img" aria-label="Image placeholder for software and asset connection">
+              Image placeholder
+            </div>
+            <p>Install VoltPilot and connect it to the datacentre’s existing controllable assets and metering points.</p>
+          </article>
+
+          <article class="step-card">
+            <p class="step-number">Step 2</p>
+            <h3>Run Shadow Mode</h3>
+            <div class="step-image" role="img" aria-label="Image placeholder for shadow mode analysis">
+              Image placeholder
+            </div>
+            <p>Allow the model to learn demand behaviour, operational constraints and flexibility potential without disrupting operations.</p>
+          </article>
+
+          <article class="step-card">
+            <p class="step-number">Step 3</p>
+            <h3>Engage the market</h3>
+            <div class="step-image" role="img" aria-label="Image placeholder for market interaction">
+              Image placeholder
+            </div>
+            <p>Activate automated participation and control actions that reduce energy cost and manage interaction with flexibility markets.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="contact" class="section contact-compact">
         <p class="eyebrow">Contact</p>
         <h2>Speak with the team.</h2>
-        <p class="lead compact">Tell us about your site or interest area and we will reply quickly.</p>
-        <form action="mailto:hello@powerhaven.io" method="post" enctype="text/plain">
-          <label>
-            Name
-            <input name="name" type="text" required />
-          </label>
-          <label>
-            Organisation
-            <input name="organisation" type="text" required />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" required />
-          </label>
-          <label>
-            Message (optional)
-            <textarea name="message" rows="4"></textarea>
-          </label>
-          <button class="cta solid" type="submit">Send Message</button>
-        </form>
+        <p class="lead compact">For pilot discussions, partnerships, or team interest.</p>
+        <a class="cta solid" href="mailto:hello@powerhaven.io">Speak with the team</a>
       </section>
     </main>
 

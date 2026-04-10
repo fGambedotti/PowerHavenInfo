@@ -29,6 +29,8 @@ const regionInfo = document.getElementById("regionInfo");
 const modeTag = document.getElementById("modeTag");
 const gridChartTitle = document.getElementById("gridChartTitle");
 const marketChartTitle = document.getElementById("marketChartTitle");
+const gridChartTooltip = document.getElementById("gridChartTooltip");
+const marketChartTooltip = document.getElementById("marketChartTooltip");
 
 const baselineCostEl = document.getElementById("baselineCost");
 const baseEnergyEl = document.getElementById("baseEnergy");
@@ -59,7 +61,10 @@ const marketChart = document.getElementById("marketChart");
 const appState = {
   yearSeries: [],
   dailyThresholds: [],
-  regions: []
+  regions: [],
+  chartMeta: {},
+  hoverIndex: {},
+  interactionsBound: false
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-GB", {
@@ -102,6 +107,17 @@ function formatDateShort(date) {
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
+    timeZone: "UTC"
+  });
+}
+
+function formatDateTime(date) {
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
     timeZone: "UTC"
   });
 }
@@ -347,9 +363,13 @@ function setupCanvas(canvas) {
   return { ctx, width: logicalWidth, height: logicalHeight };
 }
 
-function drawMultiLineChart(canvas, seriesConfigs, labels) {
+function formatValue(value, decimals = 1) {
+  return Number(value).toFixed(decimals);
+}
+
+function drawMultiLineChart(canvas, seriesConfigs, labels, options, hoverIndex = null) {
   const { ctx, width, height } = setupCanvas(canvas);
-  const padding = { top: 16, right: 16, bottom: 30, left: 16 };
+  const padding = { top: 18, right: 16, bottom: 44, left: 62 };
   const left = padding.left;
   const right = width - padding.right;
   const top = padding.top;
@@ -358,24 +378,37 @@ function drawMultiLineChart(canvas, seriesConfigs, labels) {
   ctx.clearRect(0, 0, width, height);
 
   const allValues = seriesConfigs.flatMap((config) => config.values);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
+  const minValueRaw = Math.min(...allValues);
+  const maxValueRaw = Math.max(...allValues);
+  const valuePad = (maxValueRaw - minValueRaw) * 0.08;
+  const minValue = minValueRaw - valuePad;
+  const maxValue = maxValueRaw + valuePad;
   const yRange = maxValue - minValue || 1;
+  const length = seriesConfigs[0].values.length;
+
+  if (length < 2) {
+    return;
+  }
+
+  const toX = (index) => left + (index / (length - 1)) * (right - left);
+  const toY = (value) => bottom - ((value - minValue) / yRange) * (bottom - top);
 
   ctx.strokeStyle = "rgba(255,255,255,0.12)";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i += 1) {
     const y = top + ((bottom - top) * i) / 4;
+    const value = maxValue - (i / 4) * yRange;
+
     ctx.beginPath();
     ctx.moveTo(left, y);
     ctx.lineTo(right, y);
     ctx.stroke();
-  }
 
-  const length = seriesConfigs[0].values.length;
-  if (length < 2) {
-    return;
+    ctx.fillStyle = "rgba(210,223,245,0.74)";
+    ctx.font = "11px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`${formatValue(value, options.yDecimals ?? 0)}`, left - 8, y + 3);
   }
 
   for (let i = 0; i < length; i += 1) {
@@ -383,7 +416,7 @@ function drawMultiLineChart(canvas, seriesConfigs, labels) {
       continue;
     }
 
-    const x = left + (i / (length - 1)) * (right - left);
+    const x = toX(i);
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.beginPath();
     ctx.moveTo(x, top);
@@ -392,11 +425,10 @@ function drawMultiLineChart(canvas, seriesConfigs, labels) {
 
     const labelDate = labels[i];
     const label = labelDate ? formatDateShort(labelDate) : `${i}`;
-
     ctx.fillStyle = "rgba(210,223,245,0.72)";
     ctx.font = "11px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(label, x, height - 10);
+    ctx.fillText(label, x, height - 18);
   }
 
   seriesConfigs.forEach((config) => {
@@ -406,10 +438,8 @@ function drawMultiLineChart(canvas, seriesConfigs, labels) {
     ctx.beginPath();
 
     config.values.forEach((value, index) => {
-      const x = left + (index / (length - 1)) * (right - left);
-      const yNorm = (value - minValue) / yRange;
-      const y = bottom - yNorm * (bottom - top);
-
+      const x = toX(index);
+      const y = toY(value);
       if (index === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -419,6 +449,107 @@ function drawMultiLineChart(canvas, seriesConfigs, labels) {
 
     ctx.stroke();
     ctx.globalAlpha = 1;
+  });
+
+  if (hoverIndex !== null && hoverIndex >= 0 && hoverIndex < length) {
+    const x = toX(hoverIndex);
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    seriesConfigs.forEach((config) => {
+      const y = toY(config.values[hoverIndex]);
+      ctx.fillStyle = config.color;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  ctx.fillStyle = "rgba(196,211,235,0.8)";
+  ctx.font = "11px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(options.xAxisTitle, (left + right) / 2, height - 4);
+
+  ctx.save();
+  ctx.translate(14, (top + bottom) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = "rgba(196,211,235,0.8)";
+  ctx.font = "11px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${options.yAxisTitle} (${options.yUnit})`, 0, 0);
+  ctx.restore();
+
+  appState.chartMeta[options.key] = {
+    canvas,
+    labels,
+    seriesConfigs,
+    options,
+    bounds: { left, right, top, bottom, length }
+  };
+}
+
+function showChartTooltip(chartKey, index, event) {
+  const meta = appState.chartMeta[chartKey];
+  if (!meta || !meta.options.tooltipEl) return;
+
+  const tooltipEl = meta.options.tooltipEl;
+  const cardRect = meta.canvas.closest(".chart-card").getBoundingClientRect();
+  const date = meta.labels[index];
+  const rows = meta.seriesConfigs
+    .map((series) => {
+      const decimals = series.decimals ?? 1;
+      return `<div>${series.name}: <strong>${formatValue(series.values[index], decimals)} ${series.unit}</strong></div>`;
+    })
+    .join("");
+
+  tooltipEl.innerHTML = `<div><strong>${formatDateTime(date)} UTC</strong></div>${rows}`;
+  tooltipEl.style.display = "block";
+
+  let left = event.clientX - cardRect.left + 14;
+  let top = event.clientY - cardRect.top + 14;
+
+  if (left + tooltipEl.offsetWidth > cardRect.width - 8) {
+    left = cardRect.width - tooltipEl.offsetWidth - 8;
+  }
+
+  if (top + tooltipEl.offsetHeight > cardRect.height - 8) {
+    top = cardRect.height - tooltipEl.offsetHeight - 8;
+  }
+
+  tooltipEl.style.left = `${Math.max(8, left)}px`;
+  tooltipEl.style.top = `${Math.max(8, top)}px`;
+}
+
+function bindChartInteractions(chartKey, canvas) {
+  canvas.addEventListener("mousemove", (event) => {
+    const meta = appState.chartMeta[chartKey];
+    if (!meta) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const { left, right, length } = meta.bounds;
+    const ratio = clamp((x - left) / (right - left), 0, 1);
+    const index = Math.round(ratio * (length - 1));
+
+    appState.hoverIndex[chartKey] = index;
+    drawMultiLineChart(canvas, meta.seriesConfigs, meta.labels, meta.options, index);
+    showChartTooltip(chartKey, index, event);
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    const meta = appState.chartMeta[chartKey];
+    if (!meta) return;
+
+    appState.hoverIndex[chartKey] = null;
+    drawMultiLineChart(canvas, meta.seriesConfigs, meta.labels, meta.options, null);
+    if (meta.options.tooltipEl) {
+      meta.options.tooltipEl.style.display = "none";
+    }
   });
 }
 
@@ -473,38 +604,68 @@ function renderResults(simulation, useVpEnabled) {
     gridDrawChart,
     [
       {
+        name: "Baseline grid draw",
         values: simulation.snapshots.baselineDrawSnapshot,
         color: "#9ab0cd",
         width: 2,
-        opacity: useVpEnabled ? 0.65 : 1
+        opacity: useVpEnabled ? 0.65 : 1,
+        unit: "MW",
+        decimals: 1
       },
       {
+        name: "VoltPilot grid draw",
         values: simulation.snapshots.vpDrawSnapshot,
         color: "#00D4FF",
         width: 2.4,
-        opacity: useVpEnabled ? 1 : 0.6
+        opacity: useVpEnabled ? 1 : 0.6,
+        unit: "MW",
+        decimals: 1
       }
     ],
-    times
+    times,
+    {
+      key: "grid",
+      xAxisTitle: "Date (UTC)",
+      yAxisTitle: "Grid draw",
+      yUnit: "MW",
+      yDecimals: 1,
+      tooltipEl: gridChartTooltip
+    },
+    appState.hoverIndex.grid ?? null
   );
 
   drawMultiLineChart(
     marketChart,
     [
       {
+        name: "Wholesale price",
         values: simulation.snapshots.priceSnapshot,
         color: "#4cc8ff",
         width: 2.2,
-        opacity: 0.95
+        opacity: 0.95,
+        unit: "£/MWh",
+        decimals: 0
       },
       {
+        name: "Balancing value",
         values: simulation.snapshots.bmSnapshot,
         color: "#4FFFB0",
         width: 2,
-        opacity: 0.95
+        opacity: 0.95,
+        unit: "£/MWh",
+        decimals: 0
       }
     ],
-    times
+    times,
+    {
+      key: "market",
+      xAxisTitle: "Date (UTC)",
+      yAxisTitle: "Price",
+      yUnit: "£/MWh",
+      yDecimals: 0,
+      tooltipEl: marketChartTooltip
+    },
+    appState.hoverIndex.market ?? null
   );
 }
 
@@ -602,6 +763,11 @@ async function initDemo() {
   appState.dailyThresholds = buildDailyThresholds(appState.yearSeries);
 
   bindEvents();
+  if (!appState.interactionsBound) {
+    bindChartInteractions("grid", gridDrawChart);
+    bindChartInteractions("market", marketChart);
+    appState.interactionsBound = true;
+  }
   runSimulation();
 }
 

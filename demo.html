@@ -156,12 +156,34 @@
 
           <div class="chart-grid">
             <article class="chart-card">
-              <h3 id="gridChartTitle">7-day grid draw profile</h3>
+              <h3
+                id="gridChartTitle"
+                class="title-tip"
+                data-tip="Shows half-hourly grid import over a 7-day window. Compare baseline demand against VoltPilot demand-shifted operation."
+              >
+                7-day grid draw profile
+              </h3>
               <canvas id="gridDrawChart" height="240" aria-label="Grid draw profile chart"></canvas>
+              <div class="chart-legend">
+                <span><i class="legend-dot baseline-dot"></i>Baseline grid draw</span>
+                <span><i class="legend-dot vp-dot"></i>VoltPilot grid draw</span>
+              </div>
+              <div id="gridChartTooltip" class="chart-tooltip" role="status" aria-live="polite"></div>
             </article>
             <article class="chart-card">
-              <h3 id="marketChartTitle">7-day price and balancing value</h3>
+              <h3
+                id="marketChartTitle"
+                class="title-tip"
+                data-tip="Shows UK wholesale electricity price and regional balancing value for the selected area across the same 7-day window."
+              >
+                7-day price and balancing value
+              </h3>
               <canvas id="marketChart" height="240" aria-label="Market price and balancing value chart"></canvas>
+              <div class="chart-legend">
+                <span><i class="legend-dot price-dot"></i>Wholesale price</span>
+                <span><i class="legend-dot bm-dot"></i>Balancing value</span>
+              </div>
+              <div id="marketChartTooltip" class="chart-tooltip" role="status" aria-live="polite"></div>
             </article>
           </div>
 

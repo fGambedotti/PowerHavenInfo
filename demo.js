@@ -1,24 +1,47 @@
 const HALF_HOUR_HOURS = 0.5;
 const INTERVALS_PER_DAY = 48;
+const SNAPSHOT_DAYS = 7;
 const YEAR = 2025;
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
 
 const regionSelect = document.getElementById("regionSelect");
 const sizeSlider = document.getElementById("sizeSlider");
 const sizeValue = document.getElementById("sizeValue");
+const monthSelect = document.getElementById("monthSelect");
 const useVoltPilot = document.getElementById("useVoltPilot");
 const batteryHours = document.getElementById("batteryHours");
 const runModelButton = document.getElementById("runModel");
 const regionInfo = document.getElementById("regionInfo");
 const modeTag = document.getElementById("modeTag");
+const gridChartTitle = document.getElementById("gridChartTitle");
+const marketChartTitle = document.getElementById("marketChartTitle");
 
 const baselineCostEl = document.getElementById("baselineCost");
-const vpCostEl = document.getElementById("vpCost");
-const costSavingEl = document.getElementById("costSaving");
-const flexRevenueEl = document.getElementById("flexRevenue");
-const netBenefitEl = document.getElementById("netBenefit");
-const avgBmPriceEl = document.getElementById("avgBmPrice");
 const baseEnergyEl = document.getElementById("baseEnergy");
+const baseEmissionsEl = document.getElementById("baseEmissions");
+
+const vpCostEl = document.getElementById("vpCost");
+const flexRevenueEl = document.getElementById("flexRevenue");
 const vpEnergyEl = document.getElementById("vpEnergy");
+const vpEmissionsEl = document.getElementById("vpEmissions");
+const avgBmPriceEl = document.getElementById("avgBmPrice");
+
+const costSavingEl = document.getElementById("costSaving");
+const netBenefitEl = document.getElementById("netBenefit");
 const energyReductionEl = document.getElementById("energyReduction");
 const emissionReductionEl = document.getElementById("emissionReduction");
 
@@ -61,6 +84,26 @@ function noise(seed) {
 function gaussian(x, center, width) {
   const diff = (x - center) / width;
   return Math.exp(-0.5 * diff * diff);
+}
+
+function formatCurrency(value) {
+  return currencyFormatter.format(value);
+}
+
+function formatMWh(value) {
+  return `${mwhFormatter.format(value)} MWh`;
+}
+
+function formatTonnes(value) {
+  return `${mwhFormatter.format(value)} tCO₂`;
+}
+
+function formatDateShort(date) {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    timeZone: "UTC"
+  });
 }
 
 function buildSyntheticYear(year) {
@@ -155,23 +198,29 @@ function getBmPrice(point, regionConstraint, region) {
   return region.bmBasePrice * (1 + 0.92 * regionConstraint) * (1 + scarcityAdder);
 }
 
-function formatCurrency(value) {
-  return currencyFormatter.format(value);
+function getSnapshotBounds(selectedMonth) {
+  const monthStartIndex = appState.yearSeries.findIndex((point) => point.timestamp.getUTCMonth() === selectedMonth);
+  if (monthStartIndex < 0) {
+    return { start: 0, end: SNAPSHOT_DAYS * INTERVALS_PER_DAY };
+  }
+
+  const monthPoints = appState.yearSeries.filter((point) => point.timestamp.getUTCMonth() === selectedMonth);
+  const monthEndIndex = monthStartIndex + monthPoints.length;
+  const requestedEnd = monthStartIndex + SNAPSHOT_DAYS * INTERVALS_PER_DAY;
+
+  return {
+    start: monthStartIndex,
+    end: Math.min(monthEndIndex, requestedEnd)
+  };
 }
 
-function formatMWh(value) {
-  return `${mwhFormatter.format(value)} MWh`;
-}
-
-function formatTonnes(value) {
-  return `${mwhFormatter.format(value)} tCO₂`;
-}
-
-function computeSimulation({ sizeMw, region, batteryDurationHours }) {
+function computeSimulation({ sizeMw, region, batteryDurationHours, selectedMonth, useVpEnabled }) {
   const batteryCapacityMwh = sizeMw * batteryDurationHours;
   const batteryPowerMw = sizeMw;
   const chargeEfficiency = 0.96;
   const dischargeEfficiency = 0.96;
+
+  const snapshotBounds = getSnapshotBounds(selectedMonth);
 
   let baselineCost = 0;
   let baselineEnergy = 0;
@@ -191,8 +240,7 @@ function computeSimulation({ sizeMw, region, batteryDurationHours }) {
   const vpDrawSnapshot = [];
   const priceSnapshot = [];
   const bmSnapshot = [];
-  const snapshotStart = 34 * INTERVALS_PER_DAY;
-  const snapshotEnd = snapshotStart + 96;
+  const timeSnapshot = [];
 
   appState.yearSeries.forEach((point, index) => {
     const regionConstraint = getRegionConstraint(point, region, index);
@@ -212,44 +260,48 @@ function computeSimulation({ sizeMw, region, batteryDurationHours }) {
     baselineGridEnergy += baselineIntervalEnergy;
     baselineEmissions += (baselineIntervalEnergy * carbonFactor) / 1000;
 
-    const optimisationFactor = 0.018 + 0.04 * regionConstraint;
-    const optimisedLoadMw = baseLoadMw * (1 - optimisationFactor);
-
-    const thresholds = appState.dailyThresholds[point.dayIndex];
+    let optimisedLoadMw = baseLoadMw;
     let chargeMw = 0;
     let dischargeMw = 0;
 
-    const shouldCharge = point.wholesalePrice <= thresholds.low && soc < batteryCapacityMwh * 0.97;
-    const shouldDischarge =
-      (point.wholesalePrice >= thresholds.high || regionConstraint >= 0.72) && soc > batteryCapacityMwh * 0.04;
+    if (useVpEnabled) {
+      const optimisationFactor = 0.018 + 0.04 * regionConstraint;
+      optimisedLoadMw = baseLoadMw * (1 - optimisationFactor);
 
-    if (shouldCharge) {
-      const availableStorageMwh = batteryCapacityMwh - soc;
-      chargeMw = Math.min(batteryPowerMw, availableStorageMwh / (HALF_HOUR_HOURS * chargeEfficiency));
-      soc += chargeMw * HALF_HOUR_HOURS * chargeEfficiency;
-    }
+      const thresholds = appState.dailyThresholds[point.dayIndex];
+      const shouldCharge = point.wholesalePrice <= thresholds.low && soc < batteryCapacityMwh * 0.97;
+      const shouldDischarge =
+        (point.wholesalePrice >= thresholds.high || regionConstraint >= 0.72) && soc > batteryCapacityMwh * 0.04;
 
-    if (shouldDischarge) {
-      const deliverableMw = (soc * dischargeEfficiency) / HALF_HOUR_HOURS;
-      dischargeMw = Math.min(batteryPowerMw, optimisedLoadMw, deliverableMw);
-      soc -= (dischargeMw * HALF_HOUR_HOURS) / dischargeEfficiency;
+      if (shouldCharge) {
+        const availableStorageMwh = batteryCapacityMwh - soc;
+        chargeMw = Math.min(batteryPowerMw, availableStorageMwh / (HALF_HOUR_HOURS * chargeEfficiency));
+        soc += chargeMw * HALF_HOUR_HOURS * chargeEfficiency;
+      }
+
+      if (shouldDischarge) {
+        const deliverableMw = (soc * dischargeEfficiency) / HALF_HOUR_HOURS;
+        dischargeMw = Math.min(batteryPowerMw, optimisedLoadMw, deliverableMw);
+        soc -= (dischargeMw * HALF_HOUR_HOURS) / dischargeEfficiency;
+      }
     }
 
     const vpGridMw = Math.max(0, optimisedLoadMw + chargeMw - dischargeMw);
     const vpIntervalGridEnergy = vpGridMw * HALF_HOUR_HOURS;
-    const dischargedMwh = dischargeMw * HALF_HOUR_HOURS;
+    const dispatchedMwh = dischargeMw * HALF_HOUR_HOURS;
 
     vpCost += vpIntervalGridEnergy * point.wholesalePrice;
     vpEnergy += optimisedLoadMw * HALF_HOUR_HOURS;
     vpGridEnergy += vpIntervalGridEnergy;
     vpEmissions += (vpIntervalGridEnergy * carbonFactor) / 1000;
-    vpRevenue += dischargedMwh * bmPrice;
+    vpRevenue += dispatchedMwh * bmPrice;
 
-    if (index >= snapshotStart && index < snapshotEnd) {
+    if (index >= snapshotBounds.start && index < snapshotBounds.end) {
       baselineDrawSnapshot.push(baselineGridMw);
       vpDrawSnapshot.push(vpGridMw);
       priceSnapshot.push(point.wholesalePrice);
       bmSnapshot.push(bmPrice);
+      timeSnapshot.push(point.timestamp);
     }
   });
 
@@ -269,7 +321,8 @@ function computeSimulation({ sizeMw, region, batteryDurationHours }) {
       baselineDrawSnapshot,
       vpDrawSnapshot,
       priceSnapshot,
-      bmSnapshot
+      bmSnapshot,
+      timeSnapshot
     }
   };
 }
@@ -277,19 +330,24 @@ function computeSimulation({ sizeMw, region, batteryDurationHours }) {
 function setupCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const width = Math.max(360, Math.floor(rect.width));
-  const height = canvas.height || 240;
 
-  canvas.width = Math.floor(width * dpr);
-  canvas.height = Math.floor(height * dpr);
+  if (!canvas.dataset.logicalHeight) {
+    canvas.dataset.logicalHeight = canvas.getAttribute("height") || "240";
+  }
+
+  const logicalHeight = Number(canvas.dataset.logicalHeight);
+  const logicalWidth = Math.max(360, Math.floor(rect.width));
+
+  canvas.width = Math.floor(logicalWidth * dpr);
+  canvas.height = Math.floor(logicalHeight * dpr);
 
   const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  return { ctx, width, height };
+  return { ctx, width: logicalWidth, height: logicalHeight };
 }
 
-function drawMultiLineChart(canvas, seriesConfigs, xLabelStep = 12) {
+function drawMultiLineChart(canvas, seriesConfigs, labels) {
   const { ctx, width, height } = setupCanvas(canvas);
   const padding = { top: 16, right: 16, bottom: 30, left: 16 };
   const left = padding.left;
@@ -316,9 +374,12 @@ function drawMultiLineChart(canvas, seriesConfigs, xLabelStep = 12) {
   }
 
   const length = seriesConfigs[0].values.length;
+  if (length < 2) {
+    return;
+  }
 
   for (let i = 0; i < length; i += 1) {
-    if (i % xLabelStep !== 0 && i !== length - 1) {
+    if (i % INTERVALS_PER_DAY !== 0 && i !== length - 1) {
       continue;
     }
 
@@ -329,11 +390,13 @@ function drawMultiLineChart(canvas, seriesConfigs, xLabelStep = 12) {
     ctx.lineTo(x, bottom);
     ctx.stroke();
 
+    const labelDate = labels[i];
+    const label = labelDate ? formatDateShort(labelDate) : `${i}`;
+
     ctx.fillStyle = "rgba(210,223,245,0.72)";
     ctx.font = "11px Arial, sans-serif";
     ctx.textAlign = "center";
-    const hour = Math.floor((i / 2) % 24);
-    ctx.fillText(`${String(hour).padStart(2, "0")}:00`, x, height - 10);
+    ctx.fillText(label, x, height - 10);
   }
 
   seriesConfigs.forEach((config) => {
@@ -368,21 +431,23 @@ function updateRegionInfo(region) {
   `;
 }
 
-function renderResults(simulation) {
-  const useVp = useVoltPilot.checked;
-
+function renderResults(simulation, useVpEnabled) {
   const annualSaving = simulation.baselineCost - simulation.vpCost;
   const energySaved = simulation.baselineEnergy - simulation.vpEnergy;
   const emissionsAvoided = simulation.baselineEmissions - simulation.vpEmissions;
 
   baselineCostEl.textContent = formatCurrency(simulation.baselineCost);
-  vpCostEl.textContent = formatCurrency(simulation.vpCost);
-  costSavingEl.textContent = formatCurrency(annualSaving);
-  flexRevenueEl.textContent = formatCurrency(simulation.vpRevenue);
-  netBenefitEl.textContent = formatCurrency(simulation.netBenefit);
-  avgBmPriceEl.textContent = `${currencyFormatter.format(simulation.bmAverage)}/MWh`;
   baseEnergyEl.textContent = formatMWh(simulation.baselineEnergy);
+  baseEmissionsEl.textContent = formatTonnes(simulation.baselineEmissions);
+
+  vpCostEl.textContent = formatCurrency(simulation.vpCost);
+  flexRevenueEl.textContent = formatCurrency(simulation.vpRevenue);
   vpEnergyEl.textContent = formatMWh(simulation.vpEnergy);
+  vpEmissionsEl.textContent = formatTonnes(simulation.vpEmissions);
+  avgBmPriceEl.textContent = `${currencyFormatter.format(simulation.bmAverage)}/MWh`;
+
+  costSavingEl.textContent = formatCurrency(annualSaving);
+  netBenefitEl.textContent = formatCurrency(simulation.netBenefit);
   energyReductionEl.textContent = formatMWh(energySaved);
   emissionReductionEl.textContent = formatTonnes(emissionsAvoided);
 
@@ -394,53 +459,73 @@ function renderResults(simulation) {
   tableVpEnergyEl.textContent = formatMWh(simulation.vpGridEnergy);
   tableVpEmissionsEl.textContent = formatTonnes(simulation.vpEmissions);
 
-  modeTag.textContent = useVp ? "Mode: VoltPilot enabled" : "Mode: VoltPilot disabled";
+  modeTag.textContent = useVpEnabled ? "Mode: VoltPilot enabled" : "Mode: VoltPilot disabled";
 
-  drawMultiLineChart(gridDrawChart, [
-    {
-      values: simulation.snapshots.baselineDrawSnapshot,
-      color: "#91a9c9",
-      width: useVp ? 2 : 3,
-      opacity: useVp ? 0.6 : 1
-    },
-    {
-      values: simulation.snapshots.vpDrawSnapshot,
-      color: "#00D4FF",
-      width: useVp ? 3 : 2,
-      opacity: useVp ? 1 : 0.6
-    }
-  ]);
+  const times = simulation.snapshots.timeSnapshot;
+  if (times.length > 1) {
+    const startLabel = formatDateShort(times[0]);
+    const endLabel = formatDateShort(times[times.length - 1]);
+    gridChartTitle.textContent = `7-day grid draw profile (${startLabel} to ${endLabel})`;
+    marketChartTitle.textContent = `7-day price and balancing value (${startLabel} to ${endLabel})`;
+  }
 
-  drawMultiLineChart(marketChart, [
-    {
-      values: simulation.snapshots.priceSnapshot,
-      color: "#4cc8ff",
-      width: 2.5,
-      opacity: 0.95
-    },
-    {
-      values: simulation.snapshots.bmSnapshot,
-      color: "#4FFFB0",
-      width: 2.2,
-      opacity: 0.95
-    }
-  ]);
+  drawMultiLineChart(
+    gridDrawChart,
+    [
+      {
+        values: simulation.snapshots.baselineDrawSnapshot,
+        color: "#9ab0cd",
+        width: 2,
+        opacity: useVpEnabled ? 0.65 : 1
+      },
+      {
+        values: simulation.snapshots.vpDrawSnapshot,
+        color: "#00D4FF",
+        width: 2.4,
+        opacity: useVpEnabled ? 1 : 0.6
+      }
+    ],
+    times
+  );
+
+  drawMultiLineChart(
+    marketChart,
+    [
+      {
+        values: simulation.snapshots.priceSnapshot,
+        color: "#4cc8ff",
+        width: 2.2,
+        opacity: 0.95
+      },
+      {
+        values: simulation.snapshots.bmSnapshot,
+        color: "#4FFFB0",
+        width: 2,
+        opacity: 0.95
+      }
+    ],
+    times
+  );
 }
 
 function runSimulation() {
   const selectedRegion = appState.regions.find((region) => region.id === regionSelect.value);
   const sizeMw = Number(sizeSlider.value);
   const batteryDurationHours = Number(batteryHours.value);
+  const selectedMonth = Number(monthSelect.value);
+  const useVpEnabled = useVoltPilot.checked;
 
   updateRegionInfo(selectedRegion);
 
   const simulation = computeSimulation({
     sizeMw,
     region: selectedRegion,
-    batteryDurationHours
+    batteryDurationHours,
+    selectedMonth,
+    useVpEnabled
   });
 
-  renderResults(simulation);
+  renderResults(simulation, useVpEnabled);
 }
 
 async function loadRegions() {
@@ -479,6 +564,22 @@ function populateRegionSelect(regions) {
   });
 }
 
+function populateMonthSelect() {
+  monthSelect.innerHTML = "";
+
+  MONTH_NAMES.forEach((month, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = month;
+
+    if (index === 0) {
+      option.selected = true;
+    }
+
+    monthSelect.appendChild(option);
+  });
+}
+
 function bindEvents() {
   sizeSlider.addEventListener("input", () => {
     sizeValue.textContent = `${sizeSlider.value} MW`;
@@ -486,15 +587,16 @@ function bindEvents() {
 
   runModelButton.addEventListener("click", runSimulation);
   regionSelect.addEventListener("change", runSimulation);
+  monthSelect.addEventListener("change", runSimulation);
   batteryHours.addEventListener("change", runSimulation);
   useVoltPilot.addEventListener("change", runSimulation);
-
   window.addEventListener("resize", runSimulation);
 }
 
 async function initDemo() {
   appState.regions = await loadRegions();
   populateRegionSelect(appState.regions);
+  populateMonthSelect();
 
   appState.yearSeries = buildSyntheticYear(YEAR);
   appState.dailyThresholds = buildDailyThresholds(appState.yearSeries);

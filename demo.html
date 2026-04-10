@@ -27,8 +27,7 @@
         <p class="eyebrow">PowerHaven Demo</p>
         <h1>UK datacentre flexibility model</h1>
         <p>
-          This demo uses half-hourly synthetic market signals for 1 January to 31 December,
-          with UK-wide electricity prices and region-specific balancing value driven by local constraints.
+          Test annual outcomes with half-hourly UK signals, regional network constraints, and battery optimisation logic.
         </p>
       </section>
 
@@ -47,6 +46,11 @@
               <input id="sizeSlider" type="range" min="1" max="100" value="20" step="1" />
               <output id="sizeValue">20 MW</output>
             </div>
+          </label>
+
+          <label>
+            Chart month
+            <select id="monthSelect"></select>
           </label>
 
           <label class="toggle">
@@ -75,61 +79,88 @@
         </aside>
 
         <section class="results-panel">
-          <div class="status-row">
-            <p id="modeTag">Mode: VoltPilot enabled</p>
-            <p id="datasetTag">Dataset: synthetic 2025 half-hourly profile</p>
+          <div class="kpi-section baseline-block">
+            <div class="kpi-section-head">
+              <h3>Before VoltPilot</h3>
+              <p>Standard datacentre demand profile</p>
+            </div>
+            <div class="kpi-grid baseline-grid">
+              <article class="kpi baseline">
+                <p>Annual energy cost</p>
+                <strong id="baselineCost" class="metric-tip" data-tip="Total annual electricity spend using the standard unmanaged load profile.">£0</strong>
+              </article>
+              <article class="kpi baseline">
+                <p>Annual datacentre energy</p>
+                <strong id="baseEnergy" class="metric-tip" data-tip="Total annual electricity consumed by the datacentre in MWh with no optimisation.">0 MWh</strong>
+              </article>
+              <article class="kpi baseline">
+                <p>Annual emissions</p>
+                <strong id="baseEmissions" class="metric-tip" data-tip="Annual operational emissions from grid electricity under the baseline profile.">0 tCO₂</strong>
+              </article>
+            </div>
           </div>
 
-          <div class="kpi-grid">
-            <article class="kpi">
-              <p>Annual energy cost (baseline)</p>
-              <strong id="baselineCost">£0</strong>
-            </article>
-            <article class="kpi">
-              <p>Annual energy cost (VoltPilot)</p>
-              <strong id="vpCost">£0</strong>
-            </article>
-            <article class="kpi accent">
-              <p>Annual cost saving</p>
-              <strong id="costSaving">£0</strong>
-            </article>
-            <article class="kpi accent-soft">
-              <p>Flexibility revenue (BM)</p>
-              <strong id="flexRevenue">£0</strong>
-            </article>
-            <article class="kpi">
-              <p>Net annual benefit</p>
-              <strong id="netBenefit">£0</strong>
-            </article>
-            <article class="kpi">
-              <p>Average BM payment (selected region)</p>
-              <strong id="avgBmPrice">£0/MWh</strong>
-            </article>
-            <article class="kpi">
-              <p>Annual datacentre energy baseline</p>
-              <strong id="baseEnergy">0 MWh</strong>
-            </article>
-            <article class="kpi">
-              <p>Annual datacentre energy with VoltPilot</p>
-              <strong id="vpEnergy">0 MWh</strong>
-            </article>
-            <article class="kpi accent-soft">
-              <p>Grid energy reduction</p>
-              <strong id="energyReduction">0 MWh</strong>
-            </article>
-            <article class="kpi accent-soft">
-              <p>Annual emissions avoided</p>
-              <strong id="emissionReduction">0 tCO₂</strong>
-            </article>
+          <div class="kpi-section vp-block">
+            <div class="kpi-section-head">
+              <h3>With VoltPilot</h3>
+              <p>Battery and flexibility optimisation active</p>
+            </div>
+            <div class="kpi-grid vp-grid">
+              <article class="kpi vp">
+                <p>Annual energy cost</p>
+                <strong id="vpCost" class="metric-tip" data-tip="Annual electricity spend after optimisation and battery shifting logic.">£0</strong>
+              </article>
+              <article class="kpi vp">
+                <p>Flexibility revenue (BM)</p>
+                <strong id="flexRevenue" class="metric-tip" data-tip="Revenue earned from balancing participation based on regional constraint value and dispatch windows.">£0</strong>
+              </article>
+              <article class="kpi vp">
+                <p>Annual datacentre energy</p>
+                <strong id="vpEnergy" class="metric-tip" data-tip="Annual electricity consumed by the optimised datacentre profile.">0 MWh</strong>
+              </article>
+              <article class="kpi vp">
+                <p>Annual emissions</p>
+                <strong id="vpEmissions" class="metric-tip" data-tip="Annual operational emissions under VoltPilot scheduling and battery control.">0 tCO₂</strong>
+              </article>
+              <article class="kpi vp">
+                <p>Average BM payment</p>
+                <strong id="avgBmPrice" class="metric-tip" data-tip="Average balancing payment signal in your selected region, adjusted by local grid constraints.">£0/MWh</strong>
+              </article>
+            </div>
+          </div>
+
+          <div class="kpi-section outcome-block">
+            <div class="kpi-section-head">
+              <h3>Net impact</h3>
+              <p>Difference between baseline and optimised operation</p>
+            </div>
+            <div class="kpi-grid outcome-grid">
+              <article class="kpi outcome">
+                <p>Annual cost saving</p>
+                <strong id="costSaving" class="metric-tip" data-tip="Difference between baseline energy cost and optimised energy cost.">£0</strong>
+              </article>
+              <article class="kpi outcome">
+                <p>Net annual benefit</p>
+                <strong id="netBenefit" class="metric-tip" data-tip="Total annual value combining energy cost savings and flexibility revenue.">£0</strong>
+              </article>
+              <article class="kpi outcome">
+                <p>Grid energy reduction</p>
+                <strong id="energyReduction" class="metric-tip" data-tip="Reduction in grid-drawn electricity due to demand shifting and battery dispatch.">0 MWh</strong>
+              </article>
+              <article class="kpi outcome">
+                <p>Annual emissions avoided</p>
+                <strong id="emissionReduction" class="metric-tip" data-tip="Emissions reduction from lower grid draw and higher charging in lower-carbon periods.">0 tCO₂</strong>
+              </article>
+            </div>
           </div>
 
           <div class="chart-grid">
             <article class="chart-card">
-              <h3>48-hour grid draw profile (selected mode)</h3>
+              <h3 id="gridChartTitle">7-day grid draw profile</h3>
               <canvas id="gridDrawChart" height="240" aria-label="Grid draw profile chart"></canvas>
             </article>
             <article class="chart-card">
-              <h3>48-hour price and balancing value</h3>
+              <h3 id="marketChartTitle">7-day price and balancing value</h3>
               <canvas id="marketChart" height="240" aria-label="Market price and balancing value chart"></canvas>
             </article>
           </div>
@@ -146,27 +177,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr class="baseline-row">
                   <td>Without VoltPilot</td>
-                  <td id="tableBaseCost">£0</td>
-                  <td>£0</td>
-                  <td id="tableBaseEnergy">0 MWh</td>
-                  <td id="tableBaseEmissions">0 tCO₂</td>
+                  <td id="tableBaseCost" class="metric-tip" data-tip="Annual energy cost for the baseline operation profile.">£0</td>
+                  <td class="metric-tip" data-tip="No flexibility market participation in baseline mode.">£0</td>
+                  <td id="tableBaseEnergy" class="metric-tip" data-tip="Annual grid electricity used with no optimisation.">0 MWh</td>
+                  <td id="tableBaseEmissions" class="metric-tip" data-tip="Annual emissions from baseline grid consumption.">0 tCO₂</td>
                 </tr>
-                <tr>
+                <tr class="vp-row">
                   <td>With VoltPilot</td>
-                  <td id="tableVpCost">£0</td>
-                  <td id="tableVpRevenue">£0</td>
-                  <td id="tableVpEnergy">0 MWh</td>
-                  <td id="tableVpEmissions">0 tCO₂</td>
+                  <td id="tableVpCost" class="metric-tip" data-tip="Annual energy cost after optimisation and battery strategy.">£0</td>
+                  <td id="tableVpRevenue" class="metric-tip" data-tip="Annual flexibility revenue from balancing mechanism participation.">£0</td>
+                  <td id="tableVpEnergy" class="metric-tip" data-tip="Annual grid electricity used with VoltPilot active.">0 MWh</td>
+                  <td id="tableVpEmissions" class="metric-tip" data-tip="Annual emissions with VoltPilot operation.">0 tCO₂</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
+          <div class="method-meta">
+            <p id="modeTag">Mode: VoltPilot enabled</p>
+            <p>Dataset: synthetic 2025 half-hourly profile (Jan–Dec)</p>
+          </div>
+
           <p class="method-note">
-            Method note: This version uses a realistic synthetic 2025 half-hourly profile (not live market feed).
-            UK wholesale price is uniform nationally. Regional balancing revenue and constraints vary by network area.
+            Method note: UK wholesale price is modelled as uniform nationally. Regional balancing value and constraints vary by network area.
           </p>
         </section>
       </section>
